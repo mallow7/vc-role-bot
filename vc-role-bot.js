@@ -1,12 +1,11 @@
 const Discord = require('discord.js');
-const client = new Discord.Client();
+const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS] });
 
 client.on('ready', () => {
   console.log('VC Role Bot is online!');
 });
 
-client.on('message', message => {
-  // Add role to everyone
+client.on('messageCreate', message => {
   if (message.content === '!approvevc') {
     if (message.member.roles.cache.has('1468453734555193344') || message.member.roles.cache.has('MOD_ROLE_ID')) {
       const role = message.guild.roles.cache.get('1471004264703856671');
@@ -22,8 +21,6 @@ client.on('message', message => {
       message.reply('You need Staff or Mod role.');
     }
   }
-
-  // Remove role from everyone
   if (message.content === '!lockvc') {
     if (message.member.roles.cache.has('1468453734555193344') || message.member.roles.cache.has('MOD_ROLE_ID')) {
       const role = message.guild.roles.cache.get('1471004264703856671');
