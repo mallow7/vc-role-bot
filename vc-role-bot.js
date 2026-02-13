@@ -1,7 +1,4 @@
 const { Client, Intents } = require('discord.js');
-const express = require('express');
-const app = express();
-const port = process.env.PORT || 10000;
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS] });
 
@@ -9,14 +6,6 @@ const activeRequests = new Map();
 
 client.on('ready', () => {
   console.log('VC Role Bot is online!');
-});
-
-app.listen(port, () => {
-  console.log(`Web server is running on port ${port}`);
-});
-
-app.get('/', (req, res) => {
-  res.send('VC Role Bot is running!');
 });
 
 client.on('messageCreate', message => {
