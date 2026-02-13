@@ -15,7 +15,6 @@ app.listen(port, () => {
   console.log(`Web server is running on port ${port}`);
 });
 
-// Basic website routes
 app.get('/', (req, res) => {
   res.send(`
     <html>
@@ -30,20 +29,11 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.get('/status', (req, res) => {
-  res.json({
-    botOnline: client.user ? true : false,
-    activeRequests: activeRequests.size,
-    uptime: process.uptime()
-  });
-});
-
-// Your existing Discord bot logic here
 client.on('messageCreate', message => {
   if (message.author.id === client.user.id) return;
 
   if (message.author.bot && message.content.includes('!requestvc')) {
-    if (message.author.id === '204255221017214977' && message.channel.name === 'vc-requests') {
+    if (message.author.id === '204255221017214977' && message.channel.id === '769855036876128257') {
       if (activeRequests.has(message.guild.id)) {
         message.reply('There is already an active VC request. Wait for approval or denial.');
         return;
@@ -67,16 +57,16 @@ client.on('messageCreate', message => {
       activeRequests.delete(message.guild.id);
     }, 10 * 60 * 1000);
     activeRequests.set(message.guild.id, timeout);
-    message.reply('VC request submitted. Staff have been notified. Auto-deny in 10 minutes if not approved.');
+    message.reply('VC request submitted. Auto-deny in 10 minutes if not approved.');
   }
 
   if (message.content === '!approvevc') {
-    if (message.member.roles.cache.has('1468453734555193344') || message.member.roles.cache.has('MOD_ROLE_ID')) {
+    if (message.member.roles.cache.has('769628526701314108') || message.member.roles.cache.has('1437634924386451586')) {
       if (activeRequests.has(message.guild.id)) {
         clearTimeout(activeRequests.get(message.guild.id));
         activeRequests.delete(message.guild.id);
       }
-      const role = message.guild.roles.cache.get('1471004264703856671');
+      const role = message.guild.roles.cache.get('1471376746027941960');
       if (role) {
         message.guild.members.cache.forEach(member => {
           member.roles.add(role).catch(console.error);
@@ -91,12 +81,12 @@ client.on('messageCreate', message => {
   }
 
   if (message.content === '!lockvc') {
-    if (message.member.roles.cache.has('1468453734555193344') || message.member.roles.cache.has('MOD_ROLE_ID')) {
+    if (message.member.roles.cache.has('769628526701314108') || message.member.roles.cache.has('1437634924386451586')) {
       if (activeRequests.has(message.guild.id)) {
         clearTimeout(activeRequests.get(message.guild.id));
         activeRequests.delete(message.guild.id);
       }
-      const role = message.guild.roles.cache.get('1471004264703856671');
+      const role = message.guild.roles.cache.get('1471376746027941960');
       if (role) {
         message.guild.members.cache.forEach(member => {
           member.roles.remove(role).catch(console.error);
