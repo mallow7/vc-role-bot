@@ -6,7 +6,8 @@
     "start": "node vc-role-bot.js"
   },
   "dependencies": {
-    "discord.js": "^13.0.0"
+    "discord.js": "^13.0.0",
+    "express": "^4.18.0"  // Add this for the web server
   },
   "engines": {
     "node": "16.x"
