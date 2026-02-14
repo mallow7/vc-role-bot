@@ -7,7 +7,7 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 
 const activeRequests = new Map();
 const vcApproved = new Map();
-const activeCommands = new Set();  // Lock commands to prevent duplicates
+const activeCommands = new Set();
 
 client.on('ready', () => {
   console.log('VC Role Bot is online!');
@@ -80,7 +80,7 @@ client.on('messageCreate', message => {
       }
       vcApproved.set(message.guild.id, true);
       message.channel.send('VC session approved—users can now use !joinvc to join #VC 1.');
-      setTimeout(() => activeCommands.delete(commandKey), 1000);  // Unlock after 1 second
+      setTimeout(() => activeCommands.delete(commandKey), 1000);
     } else {
       message.reply('You need Staff or Mod role.');
     }
@@ -116,6 +116,7 @@ client.on('messageCreate', message => {
         return;
       }
       activeCommands.add(commandKey);
+      console.log(`Locking VC for guild ${message.guild.id}. Total members: ${message.guild.members.cache.size}`);
       if (activeRequests.has(message.guild.id)) {
         clearTimeout(activeRequests.get(message.guild.id));
         activeRequests.delete(message.guild.id);
@@ -124,13 +125,18 @@ client.on('messageCreate', message => {
       const role = message.guild.roles.cache.get('1471376746027941960');
       if (role) {
         message.guild.members.cache.forEach(member => {
+          console.log(`Checking member ${member.user.tag} (ID: ${member.id})`);
           if (!member.roles.cache.has('769628526701314108') && !member.roles.cache.has('1437634924386451586')) {
-            member.roles.remove(role).catch(console.error);
+            console.log(`Removing role from ${member.user.tag}`);
+            member.roles.remove(role).catch(err => console.error(`Failed to remove role from ${member.user.tag}: ${err}`));
+          } else {
+            console.log(`${member.user.tag} is staff/mod, skipping.`);
           }
         });
         message.channel.send('VC session locked—#VC 1 is now closed. Only staff and mods can join.');
-        setTimeout(() => activeCommands.delete(commandKey), 1000);  // Unlock after 1 second
+        setTimeout(() => activeCommands.delete(commandKey), 1000);
       } else {
+        console.log('VC Perms role not found.');
         message.reply('VC Perms role not found.');
       }
     } else {
