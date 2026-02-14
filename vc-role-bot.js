@@ -6,7 +6,7 @@ const port = process.env.PORT || 10000;
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS] });
 
 const activeRequests = new Map();
-const vcApproved = new Map();  // Tracks if VC is approved (true) or locked (false) per guild
+const vcApproved = new Map();
 
 client.on('ready', () => {
   console.log('VC Role Bot is online!');
@@ -36,7 +36,7 @@ client.on('messageCreate', message => {
   if (message.author.bot && message.content.includes('!requestvc')) {
     if (message.author.id === '204255221017214977' && message.channel.id === '769855036876128257') {
       if (activeRequests.has(message.guild.id)) {
-        message.reply('There is already an active VC request. Wait for approval or denial.');
+        // Already active, no need to reply or start again
         return;
       }
       const timeout = setTimeout(() => {
@@ -44,7 +44,7 @@ client.on('messageCreate', message => {
         activeRequests.delete(message.guild.id);
       }, 10 * 60 * 1000);
       activeRequests.set(message.guild.id, timeout);
-      message.reply('VC request submitted. Auto-deny in 10 minutes if not approved.');
+      // No reply here to avoid duplication
     }
   }
 
@@ -67,7 +67,7 @@ client.on('messageCreate', message => {
         clearTimeout(activeRequests.get(message.guild.id));
         activeRequests.delete(message.guild.id);
       }
-      vcApproved.set(message.guild.id, true);  // Enable !joinvc for everyone
+      vcApproved.set(message.guild.id, true);
       message.channel.send('VC session approved—users can now use !joinvc to join #VC 1.');
     } else {
       message.reply('You need Staff or Mod role.');
@@ -102,11 +102,10 @@ client.on('messageCreate', message => {
         clearTimeout(activeRequests.get(message.guild.id));
         activeRequests.delete(message.guild.id);
       }
-      vcApproved.set(message.guild.id, false);  // Disable !joinvc for non-staff/mods
+      vcApproved.set(message.guild.id, false);
       const role = message.guild.roles.cache.get('1471376746027941960');
       if (role) {
         message.guild.members.cache.forEach(member => {
-          // Skip staff and mods
           if (!member.roles.cache.has('769628526701314108') && !member.roles.cache.has('1437634924386451586')) {
             member.roles.remove(role).catch(console.error);
           }
