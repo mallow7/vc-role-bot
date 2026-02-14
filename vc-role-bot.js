@@ -7,7 +7,8 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 
 const activeRequests = new Map();
 const vcApproved = new Map();
-const recentApprovals = new Set();  // Track recent approvals to prevent duplicates
+const recentApprovals = new Set();
+const recentLocks = new Set();  // Track recent locks to prevent duplicates
 
 client.on('ready', () => {
   console.log('VC Role Bot is online!');
@@ -78,7 +79,7 @@ client.on('messageCreate', message => {
       }
       vcApproved.set(guildId, true);
       recentApprovals.add(guildId);
-      setTimeout(() => recentApprovals.delete(guildId), 5000);  // Remove from set after 5 seconds
+      setTimeout(() => recentApprovals.delete(guildId), 5000);
       message.channel.send('VC session approved—users can now use !joinvc to join #VC 1.');
     } else {
       message.reply('You need Staff or Mod role.');
@@ -109,11 +110,16 @@ client.on('messageCreate', message => {
 
   if (message.content === '!lockvc') {
     if (message.member.roles.cache.has('769628526701314108') || message.member.roles.cache.has('1437634924386451586')) {
-      if (activeRequests.has(message.guild.id)) {
-        clearTimeout(activeRequests.get(message.guild.id));
-        activeRequests.delete(message.guild.id);
+      const guildId = message.guild.id;
+      if (recentLocks.has(guildId)) {
+        message.reply('Lock is on cooldown. Please wait a few seconds.');
+        return;
       }
-      vcApproved.set(message.guild.id, false);
+      if (activeRequests.has(guildId)) {
+        clearTimeout(activeRequests.get(guildId));
+        activeRequests.delete(guildId);
+      }
+      vcApproved.set(guildId, false);
       const role = message.guild.roles.cache.get('1471376746027941960');
       if (role) {
         message.guild.members.cache.forEach(member => {
@@ -121,6 +127,8 @@ client.on('messageCreate', message => {
             member.roles.remove(role).catch(console.error);
           }
         });
+        recentLocks.add(guildId);
+        setTimeout(() => recentLocks.delete(guildId), 5000);
         message.channel.send('VC session locked—#VC 1 is now closed. Only staff and mods can join.');
       } else {
         message.reply('VC Perms role not found.');
