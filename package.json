@@ -1,15 +1,16 @@
 {
   "name": "vc-role-bot",
   "version": "1.0.0",
+  "description": "VC Role Bot for Discord",
   "main": "vc-role-bot.js",
   "scripts": {
     "start": "node vc-role-bot.js"
   },
-  "dependencies": {
-    "discord.js": "^14.0.0",  
-    "express": "^4.18.0"
-  },
   "engines": {
-    "node": "16.x"
+    "node": "18.x"
+  },
+  "dependencies": {
+    "discord.js": "^14.0.0",
+    "express": "^4.18.0"
   }
 }
