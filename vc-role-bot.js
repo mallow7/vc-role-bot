@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 10000;
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS] });
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_VOICE_STATES] });
 
 const activeRequests = new Map();
 const vcApproved = new Map();
@@ -146,7 +146,7 @@ client.on('messageCreate', message => {
       }
       vcApproved.set(message.guild.id, false);
       const role = message.guild.roles.cache.get('1471376746027941960');
-      const vcChannel = message.guild.channels.cache.get('769855238562643968');  // Replace with your VC channel ID
+      const vcChannel = message.guild.channels.cache.get('769855238562643968');  // VC channel ID
       if (role) {
         message.guild.members.cache.forEach(member => {
           console.log(`Checking member ${member.user.tag} (ID: ${member.id})`);
