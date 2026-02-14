@@ -208,13 +208,15 @@ if (!token) {
   console.error('[STARTUP] BOT_TOKEN is not defined!');
 } else {
   console.log('[STARTUP] BOT_TOKEN is defined, logging in...');
-  client.login(token).catch(err => {
-    console.error('[STARTUP] Login failed:', err);
+  client.login(token).then(() => {
+    console.log('[STARTUP] Login promise resolved - bot should be online.');
+  }).catch(err => {
+    console.error('[STARTUP] Login failed with error:', err.message);
   });
   // Timeout to detect hangs
   setTimeout(() => {
     if (!client.user) {
-      console.error('[STARTUP] Login timed out - bot may be offline due to invalid token or permissions.');
+      console.error('[STARTUP] Login timed out - check token, intents, and permissions.');
     }
-  }, 10000);  // 10 seconds timeout
+  }, 10000);
 }
