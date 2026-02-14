@@ -7,6 +7,7 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 
 const activeRequests = new Map();
 const vcApproved = new Map();
+const recentApprovals = new Set();  // Track recent approvals to prevent duplicates
 
 client.on('ready', () => {
   console.log('VC Role Bot is online!');
@@ -61,16 +62,23 @@ client.on('messageCreate', message => {
 
   if (message.content === '!approvevc') {
     if (message.member.roles.cache.has('769628526701314108') || message.member.roles.cache.has('1437634924386451586')) {
-      const isApproved = vcApproved.get(message.guild.id);
+      const guildId = message.guild.id;
+      if (recentApprovals.has(guildId)) {
+        message.reply('Approval is on cooldown. Please wait a few seconds.');
+        return;
+      }
+      const isApproved = vcApproved.get(guildId);
       if (isApproved === true) {
         message.reply('VC is already approved.');
         return;
       }
-      if (activeRequests.has(message.guild.id)) {
-        clearTimeout(activeRequests.get(message.guild.id));
-        activeRequests.delete(message.guild.id);
+      if (activeRequests.has(guildId)) {
+        clearTimeout(activeRequests.get(guildId));
+        activeRequests.delete(guildId);
       }
-      vcApproved.set(message.guild.id, true);
+      vcApproved.set(guildId, true);
+      recentApprovals.add(guildId);
+      setTimeout(() => recentApprovals.delete(guildId), 5000);  // Remove from set after 5 seconds
       message.channel.send('VC session approved—users can now use !joinvc to join #VC 1.');
     } else {
       message.reply('You need Staff or Mod role.');
