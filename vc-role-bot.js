@@ -1,5 +1,6 @@
 const { Client, Intents } = require('discord.js');
 const express = require('express');
+const fs = require('fs');  // For file persistence
 const app = express();
 const port = process.env.PORT || 10000;
 
@@ -9,7 +10,26 @@ const activeRequests = new Map();
 const vcApproved = new Map();
 const activeCommands = new Set();
 const processedMessages = new Set();
-const lastMessageTime = new Map();
+let lastMessageTime = new Map();  // Now loaded from file
+
+// Load lastMessageTime from file on startup
+if (fs.existsSync('lastMessageTime.json')) {
+  try {
+    const data = fs.readFileSync('lastMessageTime.json', 'utf8');
+    lastMessageTime = new Map(JSON.parse(data));
+  } catch (err) {
+    console.error('Error loading lastMessageTime.json:', err);
+  }
+}
+
+// Function to save lastMessageTime to file
+function saveLastMessageTime() {
+  try {
+    fs.writeFileSync('lastMessageTime.json', JSON.stringify([...lastMessageTime]));
+  } catch (err) {
+    console.error('Error saving lastMessageTime.json:', err);
+  }
+}
 
 client.on('ready', () => {
   console.log('VC Role Bot is online!');
@@ -57,6 +77,9 @@ client.on('messageCreate', message => {
     message.reply('VC request submitted. Auto-deny in 10 minutes if not approved.');
   }
 
+  // Restrict user commands to the commands channel
+  if (message.channel.id !== '769855036876128257') return;
+
   // User command for !requestvc
   if (message.content === '!requestvc') {
     if (activeRequests.has(message.guild.id)) {
@@ -88,7 +111,7 @@ client.on('messageCreate', message => {
       const lastTimeKey = `approve-${message.guild.id}`;
       const now = Date.now();
       const lastTime = lastMessageTime.get(lastTimeKey) || 0;
-      if (now - lastTime < 30000) {  // Increased to 30 seconds cooldown
+      if (now - lastTime < 30000) {  // 30 seconds cooldown
         activeCommands.delete(commandKey);
         message.reply('Approval message sent recently. Please wait.');
         return;
@@ -99,6 +122,7 @@ client.on('messageCreate', message => {
       }
       vcApproved.set(message.guild.id, true);
       lastMessageTime.set(lastTimeKey, now);
+      saveLastMessageTime();  // Save to file
       message.channel.send('VC session approved—users can now use !joinvc to join #VC 1.');
       setTimeout(() => activeCommands.delete(commandKey), 1000);
     } else {
@@ -141,7 +165,7 @@ client.on('messageCreate', message => {
       const lastTimeKey = `lock-${message.guild.id}`;
       const now = Date.now();
       const lastTime = lastMessageTime.get(lastTimeKey) || 0;
-      if (now - lastTime < 30000) {  // Increased to 30 seconds cooldown
+      if (now - lastTime < 30000) {  // 30 seconds cooldown
         activeCommands.delete(commandKey);
         message.reply('Lock message sent recently. Please wait.');
         return;
@@ -173,6 +197,7 @@ client.on('messageCreate', message => {
           }
         });
         lastMessageTime.set(lastTimeKey, now);
+        saveLastMessageTime();  // Save to file
         message.channel.send('VC session locked—#VC 1 is now closed. Only staff and mods can join.');
         setTimeout(() => activeCommands.delete(commandKey), 1000);
       } else {
