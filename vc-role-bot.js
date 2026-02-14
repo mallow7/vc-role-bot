@@ -203,6 +203,18 @@ client.on('messageCreate', message => {
 });
 
 console.log('[STARTUP] Attempting to login with BOT_TOKEN...');
-client.login(process.env.BOT_TOKEN).catch(err => {
-  console.error('[STARTUP] Login failed:', err);
-});
+const token = process.env.BOT_TOKEN;
+if (!token) {
+  console.error('[STARTUP] BOT_TOKEN is not defined!');
+} else {
+  console.log('[STARTUP] BOT_TOKEN is defined, logging in...');
+  client.login(token).catch(err => {
+    console.error('[STARTUP] Login failed:', err);
+  });
+  // Timeout to detect hangs
+  setTimeout(() => {
+    if (!client.user) {
+      console.error('[STARTUP] Login timed out - bot may be offline due to invalid token or permissions.');
+    }
+  }, 10000);  // 10 seconds timeout
+}
