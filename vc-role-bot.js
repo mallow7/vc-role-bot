@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 10000;
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_VOICE_STATES] });
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS] });
 
 const activeRequests = new Map();
 const vcApproved = new Map();
@@ -11,14 +11,12 @@ const activeCommands = new Set();
 const processedMessages = new Set();
 const lastMessageTime = new Map();
 
-console.log('[STARTUP] Initializing VC Role Bot...');
-
 client.on('ready', () => {
-  console.log('[STARTUP] VC Role Bot is online!');
+  console.log('VC Role Bot is online!');
 });
 
 app.listen(port, () => {
-  console.log(`[STARTUP] Web server is running on port ${port}`);
+  console.log(`Web server is running on port ${port}`);
 });
 
 app.get('/', (req, res) => {
@@ -36,22 +34,14 @@ app.get('/', (req, res) => {
 });
 
 client.on('messageCreate', message => {
-  console.log(`[DEBUG] Received message: ID ${message.id}, Author: ${message.author.tag}, Content: "${message.content}", Channel: ${message.channel.name} (${message.channel.id})`);
-  if (message.author.id === client.user.id) {
-    console.log('[DEBUG] Ignoring own message');
-    return;
-  }
+  if (message.author.id === client.user.id) return;
 
   // Check if message has already been processed
-  if (processedMessages.has(message.id)) {
-    console.log(`[DEBUG] Message ${message.id} already processed, skipping.`);
-    return;
-  }
+  if (processedMessages.has(message.id)) return;
   processedMessages.add(message.id);
 
-  // Bot listener for YAGPDB's request message (restricted to original channel)
+  // Bot listener for YAGPDB's request message
   if (message.author.bot && message.author.id === '204255221017214977' && message.channel.id === '769855036876128257' && message.content.includes('has requested a moderated voice channel session')) {
-    console.log('[DEBUG] YAGPDB request message detected');
     if (activeRequests.has(message.guild.id)) {
       return;
     }
@@ -63,18 +53,8 @@ client.on('messageCreate', message => {
     message.reply('VC request submitted. Auto-deny in 10 minutes if not approved.');
   }
 
-  // Allow user commands in the two specified channels
-  const allowedChannels = ['769855036876128257', '1471682252537860213'];
-  if (!allowedChannels.includes(message.channel.id)) {
-    console.log(`[DEBUG] Message not in allowed command channels, ignoring`);
-    return;
-  }
-
-  console.log(`[DEBUG] Processing command: ${message.content}`);
-
   // User command for !requestvc
   if (message.content === '!requestvc') {
-    console.log('[DEBUG] !requestvc triggered');
     if (activeRequests.has(message.guild.id)) {
       message.reply('You already have an active VC request. Wait for approval or denial.');
       return;
@@ -87,7 +67,6 @@ client.on('messageCreate', message => {
   }
 
   if (message.content === '!approvevc') {
-    console.log(`[DEBUG] !approvevc triggered for message ${message.id}`);
     if (message.member.roles.cache.has('769628526701314108') || message.member.roles.cache.has('1437634924386451586')) {
       const commandKey = `approve-${message.guild.id}`;
       if (activeCommands.has(commandKey)) {
@@ -104,7 +83,7 @@ client.on('messageCreate', message => {
       const lastTimeKey = `approve-${message.guild.id}`;
       const now = Date.now();
       const lastTime = lastMessageTime.get(lastTimeKey) || 0;
-      if (now - lastTime < 3000) {  // 3 seconds cooldown
+      if (now - lastTime < 5000) {
         activeCommands.delete(commandKey);
         message.reply('Approval message sent recently. Please wait.');
         return;
@@ -123,7 +102,6 @@ client.on('messageCreate', message => {
   }
 
   if (message.content === '!joinvc') {
-    console.log('[DEBUG] !joinvc triggered');
     const isApproved = vcApproved.get(message.guild.id) || false;
     const isStaffOrMod = message.member.roles.cache.has('769628526701314108') || message.member.roles.cache.has('1437634924386451586');
     
@@ -146,7 +124,6 @@ client.on('messageCreate', message => {
   }
 
   if (message.content === '!lockvc') {
-    console.log(`[DEBUG] !lockvc triggered for message ${message.id}`);
     if (message.member.roles.cache.has('769628526701314108') || message.member.roles.cache.has('1437634924386451586')) {
       const commandKey = `lock-${message.guild.id}`;
       if (activeCommands.has(commandKey)) {
@@ -158,7 +135,7 @@ client.on('messageCreate', message => {
       const lastTimeKey = `lock-${message.guild.id}`;
       const now = Date.now();
       const lastTime = lastMessageTime.get(lastTimeKey) || 0;
-      if (now - lastTime < 3000) {  // 3 seconds cooldown
+      if (now - lastTime < 5000) {
         activeCommands.delete(commandKey);
         message.reply('Lock message sent recently. Please wait.');
         return;
@@ -169,15 +146,11 @@ client.on('messageCreate', message => {
       }
       vcApproved.set(message.guild.id, false);
       const role = message.guild.roles.cache.get('1471376746027941960');
-      const vcChannel = message.guild.channels.cache.get('769855238562643968');  // VC channel ID
+      const vcChannel = message.guild.channels.cache.get('769855238562643968');  // Replace with your VC channel ID
       if (role) {
         message.guild.members.cache.forEach(member => {
           console.log(`Checking member ${member.user.tag} (ID: ${member.id})`);
-          const isStaff = member.roles.cache.has('769628526701314108');
-          const isMod = member.roles.cache.has('1437634924386451586');
-          const isBot = member.id === '1470584024882872430';
-          console.log(`isStaff: ${isStaff}, isMod: ${isMod}, isBot: ${isBot}, member.id: ${member.id}`);
-          if (!isStaff && !isMod && !isBot) {
+          if (!member.roles.cache.has('769628526701314108') && !member.roles.cache.has('1437634924386451586')) {
             console.log(`Removing role from ${member.user.tag}`);
             member.roles.remove(role).catch(err => console.error(`Failed to remove role from ${member.user.tag}: ${err}`));
             // Disconnect from VC if in the channel
@@ -186,7 +159,7 @@ client.on('messageCreate', message => {
               member.voice.disconnect().catch(err => console.error(`Failed to disconnect ${member.user.tag}: ${err}`));
             }
           } else {
-            console.log(`${member.user.tag} is staff/mod/bot, skipping.`);
+            console.log(`${member.user.tag} is staff/mod, skipping.`);
           }
         });
         lastMessageTime.set(lastTimeKey, now);
@@ -202,21 +175,4 @@ client.on('messageCreate', message => {
   }
 });
 
-console.log('[STARTUP] Attempting to login with BOT_TOKEN...');
-const token = process.env.BOT_TOKEN;
-if (!token) {
-  console.error('[STARTUP] BOT_TOKEN is not defined!');
-} else {
-  console.log('[STARTUP] BOT_TOKEN is defined, logging in...');
-  client.login(token).then(() => {
-    console.log('[STARTUP] Login promise resolved - bot should be online.');
-  }).catch(err => {
-    console.error('[STARTUP] Login failed with error:', err.message);
-  });
-  // Timeout to detect hangs
-  setTimeout(() => {
-    if (!client.user) {
-      console.error('[STARTUP] Login timed out - check token, intents, and permissions.');
-    }
-  }, 10000);
-}
+client.login(process.env.BOT_TOKEN);
