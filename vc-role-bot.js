@@ -1,7 +1,7 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 10000;  // Render sets PORT; fallback to 10000 for local testing
+const port = process.env.PORT || 3000;  // Use Render's PORT or fallback to 3000
 
 const client = new Client({
   intents: [
