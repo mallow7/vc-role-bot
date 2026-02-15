@@ -3,12 +3,10 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 10000; // ✅ Fixed port for Render
 
-
 if (!process.env.BOT_TOKEN) {
   console.error("❌ BOT_TOKEN is missing! Add it in Render Environment Variables.");
   process.exit(1);
 }
-
 
 const client = new Client({
   intents: [
@@ -19,24 +17,24 @@ const client = new Client({
   ]
 });
 
-
 const activeRequests = new Map();
 const vcApproved = new Map();
 const activeCommands = new Set();
 const processedMessages = new Set();
 const lastMessageTime = new Map();
 
+// Track whether bot is fully ready
+let botReady = false;
 
 setInterval(() => {
   processedMessages.clear();
 }, 60 * 60 * 1000);
 
-
 client.once('ready', () => {
   console.log('✅ VC Role Bot is online!');
   console.log(`🤖 Logged in as ${client.user.tag}`);
+  botReady = true;
 });
-
 
 client.on('error', (error) => {
   console.error('Discord client error:', error);
@@ -51,7 +49,6 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-
 app.listen(port, () => {
   console.log(`🌐 Web server is running on port ${port}`);
 });
@@ -62,13 +59,12 @@ app.get('/', (req, res) => {
       <head><title>VC Role Bot</title></head>
       <body>
         <h1>VC Role Bot is Running!</h1>
-        <p>Status: ${client.user ? 'Online' : 'Offline'}</p>
+        <p>Status: ${botReady ? 'Online' : 'Offline'}</p>
         <p>Last updated: ${new Date().toLocaleString()}</p>
       </body>
     </html>
   `);
 });
-
 
 client.on('messageCreate', async (message) => {
   try {
@@ -80,7 +76,6 @@ client.on('messageCreate', async (message) => {
 
     const allowedChannels = ['769855036876128257', '1471682252537860213'];
     if (!allowedChannels.includes(message.channel.id)) return;
-
 
     if (message.content === '!requestvc') {
       if (activeRequests.has(message.guild.id)) {
@@ -95,7 +90,6 @@ client.on('messageCreate', async (message) => {
       activeRequests.set(message.guild.id, timeout);
       return message.reply('VC request submitted.');
     }
-
 
     if (message.content === '!approvevc') {
       const isStaff =
@@ -114,7 +108,6 @@ client.on('messageCreate', async (message) => {
       vcApproved.set(message.guild.id, true);
       return message.channel.send('VC session approved — users can now use !joinvc.');
     }
-
 
     if (message.content === '!joinvc') {
       const approved = vcApproved.get(message.guild.id);
@@ -136,7 +129,6 @@ client.on('messageCreate', async (message) => {
       await message.member.roles.add(role);
       return message.reply('VC access granted.');
     }
-
 
     if (message.content === '!lockvc') {
       const isStaff =
@@ -176,7 +168,6 @@ client.on('messageCreate', async (message) => {
     console.error('Error in messageCreate:', error);
   }
 });
-
 
 client.login(process.env.BOT_TOKEN)
   .catch(err => {
