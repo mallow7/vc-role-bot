@@ -1,7 +1,7 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const express = require('express');
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 10000; // ✅ Fixed port for Render
 
 
 if (!process.env.BOT_TOKEN) {
